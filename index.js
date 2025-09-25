@@ -10,18 +10,23 @@ import jobRoute from './routes/job.route.js'
 import applicationRoute from "./routes/application.route.js";
 
 const app = express();
-const PORT = process.env.PORT || 8009;
 
 //middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-const corsOptions = {
-    origin:'http://localhost:5173',
-    process.env.FRONTEND_URL,
-    credentials:true
-}
-app.use(cors(corsOptions));
+//  Allow multiple origins (local + deployed frontend)
+const allowedOrigins = [
+  "http://localhost:5173",
+  process.env.FRONTEND_URL, // e.g. https://my-frontend.vercel.app
+];
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  })
+);
+
 
 //api's
 app.use("/api/user/",userRoute);
@@ -32,6 +37,17 @@ app.get('/',(req,res)=>{
     res.send("server is running successfully")
 })
 //server
-app.listen(PORT,()=>{
-    connectDB();
-    console.log(`Server started at Port ${PORT} `)});
+const PORT = process.env.PORT || 8009;
+const startServer = async () => {
+  try {
+    await connectDB();
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(` Server running on port ${PORT}`);
+    });
+  } catch (err) {
+    console.error(" Failed to connect DB:", err);
+    process.exit(1);
+  }
+};
+
+startServer();
